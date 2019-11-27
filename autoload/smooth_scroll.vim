@@ -19,17 +19,17 @@ function! smooth_scroll#up_half(count)
     return
   endif
 
-  call smooth_scroll#up(&scroll * (a:count ? a:count : 1), 8, 1)
+  call smooth_scroll#up(&scroll * (a:count ? a:count : 1), g:smooth_scroll_duration, 1)
 endfunction
 
 
 function! smooth_scroll#down_half(count)
-  if line('$') < (line('w0') + &scroll + &scroll/1.5)
-    echom "EOF reached"
-    return
-  endif
+"  if line('$') < (line('w0') + &scroll + &scroll/1.5)
+"    echom "EOF reached"
+"    return
+"  endif
 
-  call smooth_scroll#down(&scroll * (a:count ? a:count : 1), 8, 1)
+  call smooth_scroll#down(&scroll * (a:count ? a:count : 1), g:smooth_scroll_duration, 1)
 endfunction
 
 
@@ -38,17 +38,17 @@ function! smooth_scroll#up_full(count)
     return
   endif
 
-  call smooth_scroll#up(&scroll * 2 * (a:count ? a:count : 1), 8, 1)
+  call smooth_scroll#up(&scroll * 2 * (a:count ? a:count : 1), g:smooth_scroll_duration, 1)
 endfunction
 
 
 function! smooth_scroll#down_full(count)
-  if line('$') < (line('w0') + &scroll + &scroll/1.5)
-    echom "EOF reached"
-    return
-  endif
+"  if line('$') < (line('w0') + &scroll + &scroll/1.5)
+"    echom "EOF reached"
+"    return
+"  endif
 
-  call smooth_scroll#down(&scroll * 2 * (a:count ? a:count : 1), 8, 1)
+  call smooth_scroll#down(&scroll * 2 * (a:count ? a:count : 1), g:smooth_scroll_duration, 1)
 endfunction
 
 
