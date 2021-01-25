@@ -154,6 +154,7 @@ function! s:smooth_scroll_step(timer_id)
   endif
 
   exec "normal! ".s:cmd
+  redraw
 
   if str2float(s:current_step) / s:total_steps > 0.3
     let s:sign = 1
