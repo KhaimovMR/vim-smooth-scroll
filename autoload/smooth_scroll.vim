@@ -1,3 +1,4 @@
+
 " ==============================================================================
 " File: smooth_scroll.vim
 " Author: Terry Ma
@@ -8,6 +9,21 @@
 " ==============================================================================
 
 let s:save_cpo = &cpo
+let s:total_steps = 0
+let s:dx_step = 0
+let s:et = 0
+let s:f = 0
+let s:dx = 0
+let s:sign = -1
+let s:cmd = ""
+let s:move_cmd = ""
+let s:scroll_cmd = ""
+let s:moving_half = ""
+let s:scroll_further = 1
+let s:dir = ""
+let s:duration = 0
+let s:current_step = 0
+let s:current_timer = 0
 set cpo&vim
 
 " ==============================================================================
@@ -75,66 +91,79 @@ endfunction
 " speed: Scrolling speed, or the number of lines to scroll during each scrolling
 " animation
 function! s:smooth_scroll(dir, dist, duration, speed)
-  let l:total_steps = a:dist/a:speed " Total steps
-  let l:et = 0 " Ease time
-  let l:f = 30 " fraction from i
+  let s:total_steps = a:dist/a:speed " Total steps
+  let s:dx_step = 27/s:total_steps
+  let s:et = 0 " Ease time
+  let s:f = 30 " fraction from i
+  let s:dx = 27*0.86
+  let s:move_cmd = ""
+  let s:scroll_cmd = ""
+  let s:sign = -1
+  let s:cmd = ""
+  let s:move_cmd = ""
+  let s:scroll_cmd = ""
+  let s:moving_half = ""
+  let s:scroll_further = 0
   let l:up_move_cmd = a:speed."k"
   let l:down_move_cmd = a:speed."j"
   let l:up_scroll_cmd = a:speed."\<C-y>"
   let l:down_scroll_cmd = a:speed."\<C-e>"
-  let l:move_cmd = ""
-  let l:scroll_cmd = ""
-  let l:dx = 27*0.86
-  let l:dx_step = 27/l:total_steps
-  let l:sign = -1
   let l:i = 0
 
-  let l:cmd = ""
-  let l:scroll_further = 0
 
   if a:dir ==# 'u'
-    let l:move_cmd = l:up_move_cmd
-    let l:scroll_cmd = l:up_scroll_cmd
-    let l:moving_half = 0
+    let s:move_cmd = l:up_move_cmd
+    let s:scroll_cmd = l:up_scroll_cmd
+    let s:moving_half = 0
   else
-    let l:move_cmd = l:down_move_cmd
-    let l:scroll_cmd = l:down_scroll_cmd
-    let l:moving_half = 1
+    let s:move_cmd = l:down_move_cmd
+    let s:scroll_cmd = l:down_scroll_cmd
+    let s:moving_half = 1
   endif
 
-  for i in range(l:total_steps)
-    if l:scroll_further == 0
-      let l:upper_half = line('.') < (line('w0') + &scroll)
+  let s:dir = a:dir
+  let s:duration = a:duration
+  let s:current_step = 0
+  call timer_stop(s:current_timer)
+  let s:current_timer = timer_start(s:duration, function("s:smooth_scroll_step"))
+endfunction
 
-      if l:upper_half == l:moving_half
-        let l:cmd = l:move_cmd
-      else
-        let l:cmd = l:scroll_cmd.l:move_cmd
-        let l:scroll_further = 1
+
+function! s:smooth_scroll_step(timer_id)
+  if s:scroll_further == 0
+    let l:upper_half = line('.') < (line('w0') + &scroll)
+
+    if l:upper_half == s:moving_half
+      let s:cmd = s:move_cmd
+    else
+      let s:cmd = s:scroll_cmd.s:move_cmd
+      let s:scroll_further = 1
+    endif
+  endif
+
+  if s:dir ==# 'd'
+    if line('$') < (line('w0') + &scroll + &scroll/1.5)
+      if line('.') == line('$')
+        echom "EOF reached"
+        return
       endif
+
+      let s:cmd = s:move_cmd
     endif
 
-    if a:dir ==# 'd'
-      if line('$') < (line('w0') + &scroll + &scroll/1.5)
-        if line('.') == line('$')
-          echom "EOF reached"
-          return
-        endif
+  endif
 
-        let l:cmd = l:move_cmd
-      endif
+  exec "normal! ".s:cmd
 
-    endif
+  if str2float(s:current_step) / s:total_steps > 0.3
+    let s:sign = 1
+  endif
 
-    exec "normal! ".l:cmd
-    redraw
+  let s:et = float2nr(pow(s:dx/s:f + 0, 4))
+  let s:dx = s:dx + s:sign * s:dx_step
 
-    if str2float(i) / l:total_steps > 0.3
-      let l:sign = 1
-    endif
-
-    let l:et = float2nr(pow(l:dx/l:f + 0, 4))
-    let l:dx = l:dx + l:sign * l:dx_step
-    exec "sleep " . (a:duration + l:et) . "m"
-  endfor
+  if s:current_step < s:total_steps
+    let s:current_step = s:current_step + 1
+    let s:current_timer = timer_start(s:duration, function("s:smooth_scroll_step"))
+  endif
 endfunction
